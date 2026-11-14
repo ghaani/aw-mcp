@@ -3,7 +3,7 @@ name = "aw-mcp"
 version = "0.1.0"
 description = "MCP server for AdventureWorksDW analytics"
 requires-python = ">=3.10"
-dependencies = ["mcp[cli]", "pyodbc", "python-dotenv"]
+dependencies = ["mcp>=2,<3", "pyodbc", "python-dotenv"]
 
 [project.optional-dependencies]
 dev = ["pytest"]

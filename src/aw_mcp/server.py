@@ -2,13 +2,13 @@
 import functools
 import logging
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from aw_mcp.logging_config import setup_logging
 from aw_mcp.tools import model, sales
 
 logger = logging.getLogger(__name__)
-mcp = FastMCP("aw-mcp")
+mcp = MCPServer("aw-mcp", version="0.1.0")
 
 
 def _logged(func):
