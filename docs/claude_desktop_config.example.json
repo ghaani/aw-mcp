@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "aw-mcp": {
+      "command": "C:/path/to/aw-mcp/.venv/Scripts/python.exe",
+      "args": ["-m", "aw_mcp.server"]
+    }
+  }
+}
