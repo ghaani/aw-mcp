@@ -1,6 +1,6 @@
 # aw-mcp
 
-سرور MCP با پایتون برای پرسیدن سؤال‌های تحلیلی از انبار داده‌ی `AdventureWorksDW_Custom` (SQL Server) از داخل Claude Desktop.
+سرور MCP با پایتون برای پرسیدن سؤال‌های تحلیلی از یک انبار داده‌ی فروش روی SQL Server (شرکت نمونه‌ی AdventureWorks، با نام دیتابیس `AdventureWorksDW_Custom`) از داخل Claude Desktop.
 
 بدون نوشتن SQL، از Claude بپرسید «رشد سالانه‌ی فروش هر دسته چقدر بوده؟» و Claude با ابزارهای این سرور مستقیم از انبار داده جواب می‌گیرد.
 
@@ -27,9 +27,62 @@
 ## پیش‌نیازها
 
 - Python نسخه‌ی ۳٫۱۰ یا بالاتر
-- SQL Server با دیتابیس `AdventureWorksDW_Custom`
+- SQL Server با دیتابیس نمونه (بخش «راه‌اندازی دیتابیس نمونه»)
 - ODBC Driver 17 یا 18 for SQL Server
 - Claude Desktop
+
+## مدل داده
+
+ابزارها روی یک انبار داده‌ی ستاره‌ای (Star Schema) از فروش شرکت نمونه‌ی AdventureWorks (دوچرخه و لوازم جانبی) کار می‌کنند. دیتابیس نمونه‌ی این پروژه یک نسخه‌ی سفارشی بر پایه‌ی AdventureWorksDW2025 مایکروسافت است و فقط پنج جدولی را دارد که ابزارها به آن‌ها نیاز دارند:
+
+| جدول | کاربرد |
+|---|---|
+| `FactInternetSales` | فروش اینترنتی |
+| `FactResellerSales` | فروش نمایندگان |
+| `DimDate` | سال، فصل و ماه |
+| `DimProduct` | نام و دسته‌ی محصول، هزینه‌ی استاندارد |
+| `DimSalesTerritory` | منطقه‌ی فروش |
+
+ستون‌هایی که ابزارها از آن‌ها استفاده می‌کنند:
+
+- جدول‌های Fact: `SalesOrderNumber`، `OrderDateKey`، `ProductKey`، `TerritoryKey`، `OrderQty`، `LineTotal`
+- `DimDate`: `DateKey`، `Year`، `Quarter`، `MonthNumber`
+- `DimProduct`: `ProductName`، `ProductCategoryName`، `StandardCost`
+- `DimSalesTerritory`: `TerritoryName`
+
+ستون‌هایی مثل `CustomerKey` و `PromotionKey` در جدول‌های Fact هستند، ولی جدول‌های بُعدی آن‌ها (مشتری، تخفیف و ...) در نسخه‌ی نمونه نیست چون ابزارها استفاده‌شان نمی‌کنند.
+
+اگر با دیتابیس دیگری مثل نمونه‌ی استاندارد AdventureWorksDW مایکروسافت کار می‌کنید، نام ستون‌ها فرق دارد (مثلاً `CalendarYear` به‌جای `Year`) و باید کوئری‌ها در فایل‌های `src/aw_mcp/tools/` تطبیق داده شوند.
+
+## راه‌اندازی دیتابیس نمونه
+
+**روش اول: بازیابی از بکاپ**
+
+۱. فایل `AW_Share.bak` را از بخش [Releases](https://github.com/ghaani/aw-mcp/releases) دانلود کنید.
+
+۲. در SSMS یک New Query باز کنید. اول نام منطقی فایل‌ها را ببینید:
+
+```sql
+RESTORE FILELISTONLY FROM DISK = N'C:\backup\AW_Share.bak';
+```
+
+۳. بازیابی کنید (مسیرها را با سیستم خودتان عوض کنید). نام `AdventureWorksDW_Custom` با مقدار پیش‌فرض `.env.example` یکی است:
+
+```sql
+RESTORE DATABASE AdventureWorksDW_Custom
+FROM DISK = N'C:\backup\AW_Share.bak'
+WITH MOVE 'AW_Share'     TO N'C:\SQLData\AdventureWorksDW_Custom.mdf',
+     MOVE 'AW_Share_log' TO N'C:\SQLData\AdventureWorksDW_Custom_log.ldf',
+     STATS = 10;
+```
+
+نسخه‌ی SQL Server مقصد باید برابر یا جدیدتر از سروری باشد که بکاپ را ساخته است.
+
+**روش دوم: ساخت ساختار خالی**
+
+فایل [db/schema.sql](db/schema.sql) ساختار پنج جدول را دارد. با آن می‌توانید جدول‌ها را در دیتابیس خودتان بسازید و با داده‌ی خودتان پر کنید.
+
+AdventureWorks از نمونه‌های رسمی مایکروسافت است. مجوز و شرایط استفاده‌ی نمونه‌ی اصلی در مخزن `microsoft/sql-server-samples` آمده است.
 
 ## نصب
 
@@ -88,6 +141,8 @@ aw-mcp/
 │       ├── sales.py         # sales_summary, top_products
 │       ├── yoy.py           # yoy_growth
 │       └── kpi.py           # kpi_summary
+├── db/
+│   └── schema.sql           # ساختار جدول‌های دیتابیس نمونه
 ├── tests/
 ├── docs/
 └── pyproject.toml
