@@ -5,7 +5,8 @@ import logging
 from mcp.server.mcpserver import MCPServer
 
 from aw_mcp.logging_config import setup_logging
-from aw_mcp.tools import model, sales
+
+from aw_mcp.tools import kpi, model, sales, yoy
 
 logger = logging.getLogger(__name__)
 mcp = MCPServer("aw-mcp", version="0.1.0")
@@ -55,6 +56,34 @@ def top_products(
     channel: internet, reseller or all.
     by: sales or units."""
     return sales.top_products(limit=limit, year=year, channel=channel, by=by)
+
+
+@mcp.tool()
+@_logged
+def yoy_growth(
+    group_by: str = "total", metric: str = "sales", channel: str = "all"
+) -> list[dict]:
+    """Year-over-year growth of sales or units.
+    group_by: total, category or territory.
+    metric: sales or units.
+    channel: internet, reseller or all.
+    Each row has growth_pct versus the previous year. comparable is false when
+    either year does not cover all 12 months (a partial year), so read
+    growth_pct with care and mention it to the user."""
+    return yoy.yoy_growth(group_by=group_by, metric=metric, channel=channel)
+
+
+@mcp.tool()
+@_logged
+def kpi_summary(year: int | None = None, channel: str = "all") -> list[dict]:
+    """Yearly KPIs: sales, units, orders, average order value, estimated
+    gross profit and margin.
+    year: optional calendar year filter, e.g. 2024 (omit for all years).
+    channel: internet, reseller or all.
+    months is how many months of data that year has; gross_profit_est is an
+    estimate (sales minus quantity times standard cost)."""
+    return kpi.kpi_summary(year=year, channel=channel)
+
 
 
 def main() -> None:
